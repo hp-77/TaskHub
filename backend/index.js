@@ -10,9 +10,26 @@ dotenv.config();
 
 const app = express();
 
+// Set up a whitelist of allowed origins.
+// Start with your main production URL from the environment variables.
+const whitelist = [process.env.FRONTEND_URL];
+
+// Vercel automatically provides the deployment's unique URL in the VERCEL_URL
+// environment variable. We add it to our whitelist.
+if (process.env.VERCEL_URL) {
+  whitelist.push(`https://${process.env.VERCEL_URL}`);
+}
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    // Check if the request's origin is in our whitelist.
+    origin: function (origin, callback) {
+      if (whitelist.indexOf(origin) !== -1 || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "DELETE", "PUT"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
